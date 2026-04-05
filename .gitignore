@@ -1,0 +1,4 @@
+library/
+insight/output/
+speech/output/
+*.jsonl
