@@ -3,12 +3,17 @@
 
 import json
 import re
+import requests
 from datetime import datetime
+from pathlib import Path
 from bs4 import BeautifulSoup
 
 BASE_URL = "https://www.hkma.gov.hk"
-SOURCE_FILE = "source.html"
-OUTPUT_FILE = "hkma_speech_list.jsonl"
+LISTING_URL = "https://www.hkma.gov.hk/eng/news-and-media/speeches/"
+JSONL_FILE = Path("hkma_speech_list.jsonl")
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+}
 
 
 def parse_date(date_str: str) -> str:
@@ -18,13 +23,29 @@ def parse_date(date_str: str) -> str:
         return date_str.strip()
 
 
-def extract_speeches(html: str) -> list:
-    soup = BeautifulSoup(html, "html.parser")
+def load_existing() -> set:
+    if not JSONL_FILE.exists():
+        return set()
+    seen = set()
+    with open(JSONL_FILE, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                entry = json.loads(line)
+                seen.add((entry.get("title", ""), entry.get("date", "")))
+    return seen
+
+
+def scrape_listing() -> list:
+    r = requests.get(LISTING_URL, headers=HEADERS, timeout=30)
+    r.raise_for_status()
+
+    soup = BeautifulSoup(r.text, "html.parser")
     result_div = soup.find("div", id="press-release-result")
     if not result_div:
-        raise RuntimeError("Could not find #press-release-result in HTML")
+        raise RuntimeError("Could not find #press-release-result in page")
 
-    speeches = []
+    entries = []
     for ul in result_div.find_all("ul"):
         items = ul.find_all("li", recursive=False)
         if len(items) < 2:
@@ -42,9 +63,9 @@ def extract_speeches(html: str) -> list:
         href = link.get("href", "").strip()
         if not href:
             continue
-        url = href if href.startswith("http") else BASE_URL + href
 
-        speeches.append({
+        url = href if href.startswith("http") else BASE_URL + href
+        entries.append({
             "title": title,
             "url": url,
             "date": parse_date(date_str),
@@ -52,34 +73,30 @@ def extract_speeches(html: str) -> list:
             "skipped": False,
         })
 
-    return speeches
+    return entries
 
 
 def main():
-    with open(SOURCE_FILE, encoding="utf-8") as f:
-        html = f.read()
+    existing = load_existing()
+    print(f"Existing entries: {len(existing)}")
 
-    speeches = extract_speeches(html)
-    print(f"Extracted {len(speeches)} speeches")
+    entries = scrape_listing()
+    print(f"Scraped {len(entries)} entries from listing page")
 
-    # Deduplicate by URL
-    seen = set()
-    unique = []
-    for s in speeches:
-        if s["url"] not in seen:
-            seen.add(s["url"])
-            unique.append(s)
+    new_entries = [
+        e for e in entries
+        if (e["title"], e["date"]) not in existing
+    ]
+    print(f"New entries to append: {len(new_entries)}")
 
-    if len(speeches) != len(unique):
-        print(f"After dedup: {len(unique)} (removed {len(speeches) - len(unique)} duplicates)")
+    if new_entries:
+        with open(JSONL_FILE, "a", encoding="utf-8") as f:
+            for entry in new_entries:
+                f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+        for e in new_entries:
+            print(f"  + [{e['date']}] {e['title'][:80]}")
 
-    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
-        for item in unique:
-            f.write(json.dumps(item, ensure_ascii=False) + "\n")
-
-    print(f"Written to {OUTPUT_FILE}")
-    for i, s in enumerate(unique[:3], 1):
-        print(f"  {i}. [{s['date']}] {s['title'][:80]}")
+    print("Done.")
 
 
 if __name__ == "__main__":

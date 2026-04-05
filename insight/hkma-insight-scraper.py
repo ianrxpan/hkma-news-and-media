@@ -144,7 +144,7 @@ def run_all():
         print(f"\n[{total - pending + 1}/{total}] Pending: {pending}")
 
         main()
-        print("  Sleeping 1 seconds...")
+        print("  Sleeping 10 seconds...")
         time.sleep(1)
 
 
