@@ -14,7 +14,7 @@ pip install -r requirements.txt
 echo "Dependencies installed."
 
 # Create required directories
-mkdir -p library/insight library/speech insight/output speech/output
+mkdir -p library/insight library/speech output/speech output/insight
 echo "Directories created."
 
 echo ""
