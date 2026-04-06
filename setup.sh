@@ -14,10 +14,10 @@ pip install -r requirements.txt
 echo "Dependencies installed."
 
 # Create required directories
-mkdir -p library/insight library/speech output/speech output/insight
+mkdir -p output/speech output/insight
 echo "Directories created."
 
 echo ""
 echo "=== Setup complete ==="
 echo "Activate the environment with: source .venv/bin/activate"
-echo "Then run: bash run.sh"
+echo "Then run: python hkma-speech-pipeline.py && python hkma-insight-pipeline.py"

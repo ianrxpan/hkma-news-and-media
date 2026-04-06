@@ -11,11 +11,8 @@ hkma-news-media/
 ├── hkma_speech_list.jsonl              # (gitignored) speech tracking list
 ├── hkma_insight_list.jsonl             # (gitignored) insight tracking list
 ├── output/
-│   ├── speech/                         # (gitignored) temporary scraped JSON files
-│   └── insight/                        # (gitignored) temporary scraped JSON files
-├── library/                            # (gitignored) archived JSON files
-│   ├── speech/
-│   └── insight/
+│   ├── speech/                         # (gitignored) scraped JSON files
+│   └── insight/                        # (gitignored) scraped JSON files
 ├── speech/                             # legacy scripts (can be removed)
 ├── insight/                            # legacy scripts (can be removed)
 ├── requirements.txt
@@ -63,7 +60,7 @@ bash setup.sh
 This will:
 - Create a Python virtual environment at `.venv/`
 - Install all dependencies (`requests`, `beautifulsoup4`, `boto3`)
-- Create required directories (`output/speech`, `output/insight`, `library/speech`, `library/insight`)
+- Create required directories (`output/speech`, `output/insight`)
 
 ### 4. Configure AWS credentials
 
@@ -97,6 +94,12 @@ Each pipeline runs three steps in sequence:
 ```bash
 python hkma-speech-pipeline.py
 python hkma-insight-pipeline.py
+```
+
+Or both in one command:
+
+```bash
+python hkma-speech-pipeline.py && python hkma-insight-pipeline.py
 ```
 
 ## Running on a Schedule (optional)
