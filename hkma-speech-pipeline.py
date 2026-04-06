@@ -3,7 +3,6 @@
 
 import json
 import re
-import shutil
 import time
 import boto3
 import requests
@@ -15,7 +14,6 @@ BASE_URL = "https://www.hkma.gov.hk"
 LISTING_URL = "https://www.hkma.gov.hk/eng/news-and-media/speeches/"
 JSONL_FILE = Path("hkma_speech_list.jsonl")
 OUTPUT_DIR = Path("output/speech")
-LIBRARY_DIR = Path("library/speech")
 S3_BUCKET = "lionrockws-openclaw"
 S3_JSON_PREFIX = "hkma/news-and-media/speech/markdown"
 S3_JSONL_PREFIX = "hkma/news-and-media/speech"
@@ -153,14 +151,11 @@ def fetch_url(url: str) -> str:
 def upload_and_archive(s3, f: Path):
     s3_key = f"{S3_JSON_PREFIX}/{f.name}"
     s3.upload_file(str(f), S3_BUCKET, s3_key)
-    dest = LIBRARY_DIR / f.name
-    shutil.move(str(f), str(dest))
-    print(f"  Uploaded & moved to {dest}")
+    print(f"  Uploaded to s3://{S3_BUCKET}/{s3_key}")
 
 
 def scrape_speeches():
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    LIBRARY_DIR.mkdir(parents=True, exist_ok=True)
     s3 = boto3.client("s3")
 
     while True:
